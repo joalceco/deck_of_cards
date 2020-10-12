@@ -54,10 +54,10 @@ Future<Deck> fetchDeck() async {
   }
 }
 
-Future<Cards> fetchCards(Future<String> deckId) async {
+Future<Cards> fetchCards(String deckId) async {
   final response = await http.get('https://deckofcardsapi.com/api/deck/' +
       deckId.toString() +
-      '/draw/?count=2');
+      '/draw/?count=1');
 
   if (response.statusCode == 200) {
     return Cards.fromJson(json.decode(response.body));
@@ -123,10 +123,12 @@ class _MyHomePageState extends State<MyHomePage> {
     futureDeck = fetchDeck();
   }
 
-  void _incrementCounter() {
+  void _incrementCounter() async{
+//    await futureDeck;
     setState(() {
-      futureCards = fetchCards(futureDeck.then((value) => value.deckId));
       _counter++;
+      futureDeck.then((value) => futureCards = fetchCards(value.deckId));
+
     });
   }
 
@@ -156,23 +158,28 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-          child: FutureBuilder<Cards>(
+          child: Column(
+            children: [Text("$_counter"),
+              FutureBuilder<Cards>(
         future: futureCards,
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Text(snapshot.data.cardtype[0]['code']);
-          } else if (snapshot.hasError) {
-            return Text("${snapshot.error}");
-          }
+              if (snapshot.hasData) {
+//            return Text(snapshot.data.cardtype[0]['code']);
+                return Image.network(snapshot.data.cardtype[0]['image']);
+              } else if (snapshot.hasError) {
+                return Text("${snapshot.error}");
+              }
 
-          // By default, show a loading spinner.
-          return CircularProgressIndicator();
+              // By default, show a loading spinner.
+              return CircularProgressIndicator();
         },
-      )),
+      ),
+            ],
+          )),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+        tooltip: 'New Card',
+        child: Icon(Icons.navigate_next),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
